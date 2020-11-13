@@ -1,0 +1,142 @@
+#!/bin/bash
+#$ -S /bin/bash
+#$ -N BUSTED
+#$ -o /home/ucbtass/logs/BUSTED/
+#$ -j y 
+#$ -l h_rt=2:00:00 
+#$ -l tmem=500M 
+#$ -l h_vmem=500M 
+#$ -l scr=1G
+#$ -pe smp 3 
+#~ #$ -pe orte 5
+#~ #$ -R y
+
+tasklist=$1
+treedir=$2
+outputdir=$3
+
+#~ mpirunpath=/opt/SUNWhpc/HPC8.2.1/gnu/bin/mpirun
+#~ hyphypath=/share/apps/hyphympi
+#~ hyphybatchpath=$hyphybasepath/TemplateBatchFiles
+#~ hyphybasepath=$hyphypath/lib/hyphy
+#~ hyphyexecpath=$hyphypath/bin
+mpirunpath=/share/apps/openmpi-1.8.1/bin/mpirun
+hyphypath=$HOME/Programs/hyphy
+hyphybasepath=$hyphypath/lib/hyphy
+hyphybatchpath=$hyphybasepath/TemplateBatchFiles
+hyphyexecpath=$hyphypath/bin
+
+date
+echo "This is job $JOB_NAME, job-ID $JOB_ID, ja-task-ID $SGE_TASK_ID ($JOB_ID.$SGE_TASK_ID) on host $HOSTNAME"
+echo ""
+
+
+mkdir -p $outputdir/
+if [ ! -d $outputdir ] ; then 
+  echo "!!! ERROR : unable to access output directories '$outputdir/info/' and/or 'outputdir/bestTrees/' ; exit now"
+  exit 1
+fi
+if [ ! -e $tasklist ] ; then 
+  echo "!!! ERROR : unable to access task list file '$tasklist' ; exit now"
+  exit 1
+fi
+
+nfaln=`awk "NR==$SGE_TASK_ID" $tasklist`
+#~ nfalnrad=${nfaln##*/}
+nfalnrad=`basename $nfaln`
+nfrad=${nfalnrad%.*}
+echo "Current task: $nfrad"
+
+
+workdir=/scratch0/$USER/BUSTED/$nfrad && mkdir -p $workdir
+cd $workdir/
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : unable to access '$HOSTNAME:$workdir/' working directory ; exit now"
+  exit 1
+fi
+echo "current directory is $PWD"
+
+
+# remove traces from potential previous chains 
+rm ./*$nfrad*
+echo "removed pre-existing files with name containing '$nfrad' with exit status $?"
+
+nfinaln=$workdir/$nfalnrad
+echo "cp $nfaln $nfinaln"
+cp $nfaln $nfinaln
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : could not copy file '$nfaln' to '$nfinaln' (exit status $?) ; exit now"
+  exit 1
+else
+  echo "succesfully copied input alignment file"
+fi
+
+nfgt=(`ls $treedir/$nfrad*`)
+if [ ! -z ${nfgt[2]} ] ; then 
+  echo "!!! ERROR : several files in '$treedir/' matched '$nfrad*' : ${nfgt[@]}"
+  echo "exit now"
+  exit 1
+fi
+#~ nfgtrad=${nfgt##*/}
+nfgtrad=`basename $nfgt`
+nfingt=$workdir/$nfgtrad
+echo "cp $nfgt $nfingt"
+cp $nfgt $nfingt
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : could not copy file '$nfgt' to '$nfingt' (exit status $?) ; exit now"
+  exit 1
+else
+  echo "succesfully copied input tree file"
+fi
+
+
+echo "ls ./"
+ls ./
+
+# configure program
+# select BUSTED algorithm in HYPHY
+echo "10" > ./$nfrad.BUSTED_cfg
+echo "4" >> ./$nfrad.BUSTED_cfg
+# configure BUSTED
+echo "1" >> ./$nfrad.BUSTED_cfg
+echo "$nfinaln" >> ./$nfrad.BUSTED_cfg
+echo "$nfingt" >> ./$nfrad.BUSTED_cfg
+echo "1" >> ./$nfrad.BUSTED_cfg
+echo "d" >> ./$nfrad.BUSTED_cfg
+
+
+echo "HYPHY/BUSTED parameters are:"
+echo "* * * *"
+cat ./$nfrad.BUSTED_cfg
+echo "* * * *"
+
+# run job
+echo "running HyPhy:"
+#~ $mpirunpath -np 5 --mca btl_tcp_if_exclude eth0 $hyphyexecpath/HYPHYMPI < ./$nfrad.BUSTED_cfg
+$hyphyexecpath/HYPHYMP < ./$nfrad.BUSTED_cfg
+
+echo "output of HyPhy analysis :"
+echo "ls ./*$nfrad*"
+ls ./*$nfrad*
+
+echo "cp ./*$nfrad*BUSTED* $outputdir/"
+cp ./*$nfrad*BUSTED* $outputdir/
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : unable to copy '*$nfrad*BUSTED*' output files from $HOSTNAME:$PWD (exit status $?) ; exit now"
+  exit 1
+else
+  echo "succesfully copied '*$nfrad*BUSTED*' output files"
+fi
+echo ""
+
+rm ./*$nfrad*
+echo "removed local files with name containing '$nfrad' with exit status $?"
+echo "ls ./*$nfrad*"
+ls ./*$nfrad*
+
+rm -r $workdir
+echo "removed working directory '$workdir' with exit status $?"
+echo "ls $workdir"
+ls $workdir
+
+date

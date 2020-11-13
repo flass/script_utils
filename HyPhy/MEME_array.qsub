@@ -1,0 +1,133 @@
+#!/bin/bash
+#$ -S /bin/bash
+#$ -N MEME
+#$ -o /home/ucbtass/logs/MEME
+#$ -j y 
+#$ -l h_rt=2:00:00 
+#$ -l tmem=4G 
+#$ -l h_vmem=4G 
+#$ -l scr=1G
+#$ -pe mpi 5
+
+tasklist=$1
+treedir=$2
+outputdir=$3
+
+#~ mpirunpath=/opt/SUNWhpc/HPC8.2.1/gnu/bin/mpirun
+#~ hyphypath=/share/apps/hyphympi
+#~ hyphybasepath=$hyphypath/lib/hyphy
+#~ hyphybatchpath=$hyphybasepath/TemplateBatchFiles
+#~ hyphyexecpath=$hyphypath/bin
+mpirunpath=/share/apps/openmpi-1.8.1/bin/mpirun
+hyphypath=$HOME/Programs/hyphy
+hyphybasepath=$hyphypath/lib/hyphy
+hyphybatchpath=$hyphybasepath/TemplateBatchFiles
+hyphyexecpath=$hyphypath/bin
+
+date
+echo "This is job $JOB_NAME, job-ID $JOB_ID, ja-task-ID $SGE_TASK_ID ($JOB_ID.$SGE_TASK_ID) on host $HOSTNAME"
+echo ""
+
+
+mkdir -p $outputdir/
+if [ ! -d $outputdir ] ; then 
+  echo "!!! ERROR : unable to access output directories '$outputdir/info/' and/or 'outputdir/bestTrees/' ; exit now"
+  exit 1
+fi
+if [ ! -e $tasklist ] ; then 
+  echo "!!! ERROR : unable to access task list file '$tasklist' ; exit now"
+  exit 1
+fi
+
+nfaln=`awk "NR==$SGE_TASK_ID" $tasklist`
+#~ nfalnrad=${nfaln##*/}
+nfalnrad=`basename $nfaln`
+nfrad=${nfalnrad%.*}
+echo "Current task: $nfrad"
+
+
+workdir=/scratch0/$USER/MEME && mkdir -p $workdir
+cd $workdir/
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : unable to access '$HOSTNAME:$workdir/' working directory ; exit now"
+  exit 1
+fi
+echo "current directory is $PWD"
+
+
+# remove traces from potential previous chains 
+rm ./*$nfrad*
+echo "removed pre-existing files with name containing '$nfrad' with exit status $?"
+
+nfinaln=$workdir/$nfalnrad
+echo "cp $nfaln $nfinaln"
+cp $nfaln $nfinaln
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : could not copy file '$nfaln' to '$nfinaln' (exit status $?) ; exit now"
+  exit 1
+else
+  echo "succesfully copied input alignment file"
+fi
+
+nfgt=(`ls $treedir/$nfrad*`)
+if [ ! -z ${nfgt[2]} ] ; then 
+  echo "!!! ERROR : several files in '$treedir/' matched '$nfrad*' : ${nfgt[@]}"
+  echo "exit now"
+  exit 1
+fi
+#~ nfgtrad=${nfgt##*/}
+nfgtrad=`basename $nfgt`
+nfingt=$workdir/$nfgtrad
+echo "cp $nfgt $nfingt"
+cp $nfgt $nfingt
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : could not copy file '$nfgt' to '$nfingt' (exit status $?) ; exit now"
+  exit 1
+else
+  echo "succesfully copied input tree file"
+fi
+
+
+echo "ls ./"
+ls ./
+
+# configure program
+echo "1" > ./$nfrad.MEME_cfg
+echo "1" >> ./$nfrad.MEME_cfg
+echo "1" >> ./$nfrad.MEME_cfg
+echo "1" >> ./$nfrad.MEME_cfg
+echo "$nfinaln" >> ./$nfrad.MEME_cfg
+echo "$nfingt" >> ./$nfrad.MEME_cfg
+echo "$workdir/$nfrad.MEME_model_fit" >> ./$nfrad.MEME_cfg
+echo "0.05" >> ./$nfrad.MEME_cfg
+echo "$workdir/$nfrad.MEME_out" >> ./$nfrad.MEME_cfg
+
+echo "MEME parameters are:"
+echo "* * * *"
+cat ./$nfrad.MEME_cfg
+echo "* * * *"
+
+# run job
+echo "running HyPhy:"
+$mpirunpath -np 5 --mca btl_tcp_if_exclude lo,eth0 $hyphyexecpath/HYPHYMPI BASEPATH=$hyphybasepath $hyphybatchpath/MEME_mf.bf < ./$nfrad.MEME_cfg
+
+echo "output of HyPhy analysis :"
+echo "ls ./*$nfrad*"
+ls ./*$nfrad*
+
+echo "cp ./*$nfrad.MEME_* $outputdir/"
+cp ./*$nfrad.MEME_* $outputdir/
+if [ $? != 0 ] ; then
+  echo "!!! ERROR : unable to copy '*$nfrad.MEME_*' output files from $HOSTNAME:$PWD (exit status $?) ; exit now"
+  exit 1
+else
+  echo "succesfully copied '*$nfrad*' output files"
+fi
+echo ""
+
+rm ./*$nfrad*
+echo "removed files with name containing '$nfrad' with exit status $?"
+echo "ls ./*.$nfrad*"
+ls ./*.$nfrad*
+
+date

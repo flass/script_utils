@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+echo "This is job $LSB_JOBNAME, job_ID $LSB_JOBID (array_task_ID $LSB_JOBINDEX) on host $HOSTNAME, running on these workers: $LSB_MCPU_HOSTS"
+echo ""
+
+module load diamond/0.9.24--ha888412_1
+module load blast/2.7.1=h96bfa4b_5
+if [ -z "$(which rgi)" ] ; then
+  # load conda 3 environment created with: 'conda create -n card_rgi pip && conda activate card_rgi && pip install six biopython filetype pytest mock pandas matplotlib seaborn pyfaidx pyahocorasick && pip install git+https://github.com/arpcard/rgi.git
+  conda activate card_rgi || conda3_activate card_rgi
+fi
+
+export CARD_DB=$MYLUSTRE/CARD/card.json
+
+SOFTWARE=/nfs/users/nfs_f/fl4/software
+
+tasklist=${1}
+outdir=${2}
+if [ ! -z ${3} ] ; then
+  datatype=${3}
+else
+  if [ -z "${datatype}" ] ; then
+    datatype='contig'
+  fi
+fi
+
+if [[ "${datatype}" == 'protein' && ! -z "$(which diamond)" ]] ; then
+  aligner='DIAMOND'
+else
+  aligner='BLAST'
+  
+fi
+if [ -z "${ncpus}" ] ; then
+  ncpus=1
+fi
+
+task=`awk "NR==${LSB_JOBINDEX}" ${tasklist}`
+nffasta=$(basename ${task})
+nfrad=${nffasta%.*}
+ext=${nffasta##*.}
+mkdir -p ${outdir}/
+mkdir -p ${outdir}/tmp/
+
+sed -e 's/*//g' ${task} > ${outdir}/tmp/${nffasta}
+
+echo "loading local CARD database from '${CARD_DB}'"
+rgi load --card_json ${CARD_DB} --local
+echo "loaded local CARD database; version is:"
+rgi database -v --local
+echo ""
+echo "run RGI"
+rgicmd="rgi main -i ${outdir}/tmp/${nffasta} -o ${outdir}/${nfrad} -t ${datatype} -a ${aligner} -n ${ncpus} --local --clean"
+echo "# call: ${rgicmd}"
+eval ${rgicmd}
+
+rm ${outdir}/tmp/${nffasta}

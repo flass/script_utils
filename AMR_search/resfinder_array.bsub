@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+echo "This is job $LSB_JOBNAME, job_ID $LSB_JOBID (array_task_ID $LSB_JOBINDEX) on host $HOSTNAME, running on these workers: $LSB_MCPU_HOSTS"
+echo ""
+
+module load blast/2.7.1=h96bfa4b_5
+# test Python package dependencies 
+python -c "import Bio, tabulate, cgecore"
+if [ ${?} -gt 0 ] ; then
+  # load conda 3 environment created with: 'conda create -n resfinder pip && conda activate resfinder && pip install -U biopython tabulate cgecore
+  conda activate resfinder || conda3_activate resfinder
+fi
+
+
+export RESFINDER_DB=$MYLUSTRE/resfinder_db
+#export POINTFINDER_DB=$MYLUSTRE/pointfinder_db
+
+SOFTWARE=/nfs/users/nfs_f/fl4/software
+
+tasklist=${1}
+outdir=${2}
+
+task=`awk "NR==${LSB_JOBINDEX}" ${tasklist}`
+nffsa=$(basename ${task})
+nfrad=${nffsa%.*}
+mkdir -p ${outdir}/${nfrad}
+
+python3 ${SOFTWARE}/resfinder/resfinder.py -i ${task} -o ${outdir}/${nfrad} -p ${RESFINDER_DB} \
+-mp $(which blastn) -t 0.90 -l 0.60 -q
