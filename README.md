@@ -22,8 +22,9 @@ ls $PWD/contigs/*.fa > contiglist
 mkdir -p AMR/abricate/ logs/abricate/
 # count the number of tasks to submit to the array job
 Njobs=$(wc -l contiglist | cut -d' ' -f1)
+# define other arguments, here the reference databases to search with ABRICATE
 abdbs='ncbi,card,plasmidfinder,argannot,vfdb,resfinder'
-
+# submit the array job
 bsub -J abricate-muldb[1-${Njobs}]%50 -R "select[mem>4000] rusage[mem=4000]" -M4000 -q normal \
 -e logs/abricate/abricate-muldb.%J.%I.log -o logs/abricate/abricate-muldb.%J.%I.log \
 scripts_utils/AMR_search/abricate_multipledb_array.bsub contiglist AMR/abricate/ "${abdbs}"
