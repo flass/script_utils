@@ -2,11 +2,12 @@
 
 There is lots of stuff in here, please feel free to use! In particular, you can find the following thematic folders:
 
-- `HyPhy/` include submission scripts for running application from the HyPhy phylogenetic analysis package, in particular for those that requie a MPI environment
-- `AMR_search/` include submission scripts for systematic search of AMR genes using a variety of mainstream tool (RGI, ABRICATE, Resfinder)
-
-- `LSFcluster_SangerInstitute/` include susbmission scripts generally fit for job sumission on a LSF computer cluster system (using `bsub` command), with some specific reference to the environment of the Sanger Insitute farm
-- `SGEcluster_UCL-CS/` include susbmission scripts generally fit for job sumission on a SGE computer cluster system (using `qsub` command), with some specific reference to the environment of the UCL Computer Science Department cluster
+- `HyPhy/` includes submission scripts for running application from the HyPhy phylogenetic analysis package, in particular for those that requie a MPI environment
+- `AMR_search/` includes submission scripts for systematic search of AMR genes using a variety of mainstream tool (RGI, ABRICATE, Resfinder)
+- `phylogenetics/` includes submission scripts for a variety of tree building programs RAxML and MrBayes (typically used on many gene trees of a same dataset) and for gene tree/species tree reconcilation programs ALE, ecceTERA and GeneRax
+- `LSFcluster_SangerInstitute/` includes susbmission scripts generally fit for job sumission on a LSF computer cluster system (using `bsub` command), with some specific reference to the environment of the Sanger Insitute farm
+- `PBScluster_ImperialCollege/` includes susbmission scripts generally fit for job sumission on a PBS computer cluster system (using `bsub` command), with some specific reference to the environment of the Imperial College cluster
+- `SGEcluster_UCL-CS/` includes susbmission scripts generally fit for job sumission on a SGE computer cluster system (using `qsub` command), with some specific reference to the environment of the UCL Computer Science Department cluster
 
 `*_array.[bq]sub` scripts are designed for the submission of *array* jobs on these respective systems, with the general syntax:
 ```

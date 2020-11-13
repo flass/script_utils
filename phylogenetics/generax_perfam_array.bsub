@@ -1,0 +1,44 @@
+#!/bin/bash
+
+echo "This is job $LSB_JOBNAME, job_ID $LSB_JOBID (array_task_ID $LSB_JOBINDEX) on host $HOSTNAME, running on these workers: $LSB_MCPU_HOSTS"
+echo ""
+
+# load potential modules
+if [ ! -z "${modulefile}" ] ; then
+  source ${modulefile}
+fi
+
+thisscript=$(readlink -f ${0})
+dirscript=$(dirname ${thisscript})
+
+### verify and parse key variable definition
+# tasklist
+echo "tasklist:"
+if [ -z "${tasklist}" ] ; then
+  echo "ERROR: need to define variable tasklist ; exit now"
+  exit 2
+else
+  ls ${tasklist}
+  if [ ${?} != 0 ] ; then
+    echo "ERROR: file '${tasklist}' is missing ; exit now"
+    exit 2
+  fi
+fi
+export generaxfamfi=`awk "NR==${LSB_JOBINDEX}" ${tasklist}`
+nfrad1=$(basename ${generaxfamfi})
+nfext=${nfrad1##*.}
+nfrad2=${nfrad1%.*}
+
+cd /tmp/
+jobtmpdir=raxml_tmp.${nfrad2}
+mkdir -p ${jobtmpdir}/ && cd ${jobtmpdir}/
+echo "current directory is ${PWD}"
+
+export worklocal='true'
+
+${ptgscripts}/generax_perfam.sh ${generaxfamfi}
+
+if [[ "$(basename ${PWD})" == "${jobtmpdir}" ]] ; then
+  cd ..
+  rm -r ${jobtmpdir}/
+fi
