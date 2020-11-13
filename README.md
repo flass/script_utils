@@ -9,15 +9,18 @@ There is lots of stuff in here, please feel free to use! In particular, you can 
 - `SGEcluster_UCL-CS/` include susbmission scripts generally fit for job sumission on a SGE computer cluster system (using `qsub` command), with some specific reference to the environment of the UCL Computer Science Department cluster
 
 `*_array.[bq]sub` scripts are designed for the submission of *array* jobs on these respective systems, with the general syntax:
-```sh
+```
 xsub [submission command options] script_array.xsub tasklist [other arguments]
 ```
 where `tasklist` is the path to a file containing a list of files (their FULL paths) or arguments which will be used as specific input for each subjob of the array job.
 
 An example of this syntax:
 ```sh
+# create the task list file (here listing contig files)
 ls $PWD/contigs/*.fa > contiglist
+# create folder for the output and logs, respectively
 mkdir -p AMR/abricate/ logs/abricate/
+# count the number of tasks to submit to the array job
 Njobs=$(wc -l contiglist | cut -d' ' -f1)
 abdbs='ncbi,card,plasmidfinder,argannot,vfdb,resfinder'
 
