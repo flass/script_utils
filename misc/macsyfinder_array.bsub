@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+echo "This is job $LSB_JOBNAME, job_ID $LSB_JOBID (array_task_ID $LSB_JOBINDEX) on host $HOSTNAME, running on these workers: $LSB_MCPU_HOSTS"
+echo ""
+
+module load macsyfinder/1.0.5-c2
+macsymodels=/lustre/scratch118/infgen/pathogen/pathpipe/Macsyfinder_models/models
+
+## verify key variable definition
+# tasklist
+[ -z "${tasklist}" ] && tasklist="${1}"
+[ -z "${outdir}" ] && outdir="${2}"
+[ -z "${systemsets}" ] && systemsets="${3}"
+[ -z "${systemsets}" ] && systemsets="CRISPR-Cas,TXSS,Conjugation"
+echo "tasklist:"
+if [ -z "${tasklist}" ] ; then
+  echo "ERROR: need to define variable tasklist (can be passed as argument \$1) ; exit now"
+  exit 2
+else
+  ls ${tasklist}
+  if [ $? != 0 ] ; then
+    echo "ERROR: file '${tasklist}' is missing ; exit now"
+    exit 2
+  fi
+fi
+# outdir
+echo "outdir:"
+if [ -z "${outdir}" ] ; then
+  echo "ERROR: need to define variable outdir ; exit now"
+  exit 2
+else
+  ls ${outdir} -d
+  if [ $? != 0 ] ; then
+    echo "directory '${outdir}' is missing ; create it now"
+    mkdir -p ${outdir}
+    if [ $? != 0 ] ; then
+      echo "could not create directory '${outdir}' ; exit now"
+      exit 2
+    fi
+  fi
+fi
+
+# outdir
+echo "logs:"
+if [ -z "${logs}" ] ; then
+  logs=$PWD
+fi
+
+nffasta=`awk "NR==${LSB_JOBINDEX}" ${tasklist}`
+nfrad=$(basename ${nffasta})
+nfrad1=${nfrad%.*}
+
+cd /tmp/
+jobtmpdir=${PWD}/macsyfinder_tmp.${nfrad1}
+mkdir -p ${jobtmpdir}/ && cd ${jobtmpdir}/
+echo "current directory is ${PWD}"
+
+
+if [ -d ${nffasta} ] ; then
+	# path is a folder, expect it to be an annotated assembly folder
+	protfasta=($(ls ${nffasta}/*.ptg.faa 2> /dev/null))
+	[ -z "${protfasta}" ] && protfasta=($(ls ${nffasta}/*.faa 2> /dev/null))
+	[ -z "${protfasta}" ] && protfastagz=($(ls ${nffasta}/*_protein.faa.gz 2> /dev/null)) && protfasta=./$(basename ${protfastagz%.*}) && zcat ${protfastagz} > ${protfasta}
+else
+	protfasta=${nffasta}
+fi
+
+
+## run the program on different model sets
+# CRISPR-Cas
+if [[ ${systemsets} =~ "CRISPR-Cas" ]] ; then
+  mkdir -p ${jobtmpdir}/CRISPR-Cas/ && cd ${jobtmpdir}/CRISPR-Cas/
+  macsyfinder --sequence-db ${protfasta} --db-type ordered_replicon --replicon-topology circular -o ${jobtmpdir}/CRISPR-Cas \
+   --log ${logs}/${nfrad}_MSF-Cas.log all
+  rm -f ${jobtmpdir}/CRISPR-Cas/*faa
+  rsync -avz ${jobtmpdir}/ ${outdir}/CRISPR-Cas/${nfrad1}/
+fi
+# TXSS (secretion systems)
+if [[ ${systemsets} =~ "TXSS" ]] ; then
+  mkdir -p ${jobtmpdir}/TXSS/ && cd ${jobtmpdir}/TXSS/
+  macsyfinder --sequence-db ${protfasta} --db-type ordered_replicon --replicon-topology circular -o ${jobtmpdir}/TXSS \
+   --log ${logs}/${nfrad}_MSF-TXSS.log --profile-dir ${macsymodels}/TXSS/profiles --def ${macsymodels}/TXSS/definitions all
+  rm -f ${jobtmpdir}/TXSS/*faa
+  rsync -avz ${jobtmpdir}/ ${outdir}/TXSS/${nfrad1}/
+fi
+# Conjugation
+if [[ ${systemsets} =~ "Conjugation" ]] ; then
+  mkdir -p ${jobtmpdir}/Conjugation/ && cd ${jobtmpdir}/Conjugation/
+  macsyfinder --sequence-db ${protfasta} --db-type ordered_replicon --replicon-topology circular -o ${jobtmpdir}/Conjugation \
+   --log ${logs}/${nfrad}_MSF-Conj.log --profile-dir ${macsymodels}/Conjugation/profiles --def ${macsymodels}/Conjugation/definitions all
+  rm -f ${jobtmpdir}/Conjugation/*faa
+  rsync -avz ${jobtmpdir}/ ${outdir}/Conjugation/${nfrad1}/
+fi
+
+cd /tmp/
+echo "# ls -ltr ${jobtmpdir}/*"
+ls -ltr ${jobtmpdir}/*
+echo "# ls -ltr ${outdir}/${nfrad1}/*"
+ls -ltr ${outdir}/${nfrad1}/*
+echo "# rm -r ${jobtmpdir}/"
+rm -r ${jobtmpdir}/
