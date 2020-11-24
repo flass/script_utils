@@ -2,6 +2,7 @@
 
 There is lots of stuff in here, please feel free to use! In particular, you can find the following thematic folders:
 
+- `misc/` gathers... miscelaneous scripts, including for automated download of genome asemblies from the NCBI FTP service, translating NCBI accession ids from Nuleotide to Assembly databases, splitting multi-record GenBank flat files, or simply efficiently generating a list of file full paths.   
 - `HyPhy/` includes submission scripts for running application from the HyPhy phylogenetic analysis package, in particular for those that requie a MPI environment
 - `AMR_search/` includes submission scripts for systematic search of AMR genes using a variety of mainstream tool (RGI, ABRICATE, Resfinder)
 - `phylogenetics/` includes submission scripts for a variety of tree building programs RAxML and MrBayes (typically used on many gene trees of a same dataset) and for gene tree/species tree reconcilation programs ALE, ecceTERA and GeneRax
