@@ -16,43 +16,56 @@ if sys.argv[1] in ['-h', '--help']:
 
 lnfalnin = sys.argv[1:-1]
 nfalnout = sys.argv[-1]
+print "input:"
+print '\n'.join(lnfalnin)
+print "output:"
+print nfalnout
 
 lfinhandles = [open(nfalnin, 'r') for nfalnin in lnfalnin]
-
 fout = open(nfalnout, 'w')
 
 currlabel = None
 
 def iterOneLabel(lfinhandles, fout, currlabel):
+	if not (currlabel is None):
+		fout.write(currlabel)
 	for i, fin in enumerate(lfinhandles):
+#		print fin
 		for line in fin:
+#			print line[0:min(12, len(line))]
 			if line.startswith('>'):
 				if i==0:
 					currlabel = line
-					fout.write(line)
-					break	
+#					print 'here'
 				else:
 					if line != currlabel:
 						print line
 						print currlabel
 						raise IndexError, "labels (fasta headers) are not orderred the same in input files"
-					else:
-						break # 'for line in fin' loop
+#					print 'there'
+				break # 'for line in fin' loop
 			else:
-				if line.rstrip('\n'):
-					fout.write(line)
+				fout.write(line)
+#				print 'la'
+	fout.flush()
 	return currlabel
 
 nextlabel = iterOneLabel(lfinhandles, fout, currlabel)
+n = 1
+#print ""
 while nextlabel != currlabel:
 	currlabel = nextlabel
 	nextlabel = iterOneLabel(lfinhandles, fout, currlabel)
-	print nextlabel
+	sys.stdout.write("\r%d %s"%(n, nextlabel.rstrip('\n')))
+#	print ""
+	n += 1
+#	if n == 4: break
 
 for fin in lfinhandles:
 	fin.close()
 
 fout.close()
+print " done."
 
 	
 
