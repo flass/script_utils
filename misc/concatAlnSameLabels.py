@@ -28,17 +28,17 @@ currlabel = None
 
 def iterOneLabel(lfinhandles, fout, currlabel):
 	if not (currlabel is None):
-		fout.write(currlabel)
+		fout.write(currlabel+'\n')
 	for i, fin in enumerate(lfinhandles):
 #		print fin
 		for line in fin:
 #			print line[0:min(12, len(line))]
 			if line.startswith('>'):
 				if i==0:
-					currlabel = line
+					currlabel = line.rstrip('\n').split()[0]
 #					print 'here'
 				else:
-					if line != currlabel:
+					if line.rstrip('\n').split()[0] != currlabel:
 						print line
 						print currlabel
 						raise IndexError, "labels (fasta headers) are not orderred the same in input files"
