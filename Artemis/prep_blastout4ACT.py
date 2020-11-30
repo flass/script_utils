@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
 from Bio import SeqIO
-from BCBio import GFF
 import os, sys, getopt
 
 blasttabfields = ['qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore']
 
+def usage():
+	s = sys.argv[0]+" --inblast blast+.output.outfmt6or7.file --outblast ACT.crunch.formated.file [query.sequence.chrom1.{gff|gbk|fasta}, [query.sequence.chrom2.{gff|gbk|fasta}], ...]"
+	return s
 
-opts, args = getopt.getopt(sys.argv[1:], "", ['inblast=','outblast='])
+opts, args = getopt.getopt(sys.argv[1:], "h", ['inblast=','outblast=', 'help'])
 dopt = dict(opts)
+if (('-h' in dopt) or ('--help' in dopt)):
+	print(usage())
+	sys.exit(0)
 
+if not (('--inblast' in dopt) and ('--outblast' in dopt)):
+	print("Error: missing operands:")
+	print(usage())
+	sys.exit(1)
+	
 nfinblasttab = dopt['--inblast']
 nfoutblasttab = dopt['--outblast']
 
