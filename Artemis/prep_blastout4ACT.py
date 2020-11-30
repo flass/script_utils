@@ -5,10 +5,17 @@ import os, sys, getopt
 blasttabfields = ['qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore']
 
 def usage():
-	s = sys.argv[0]+" --inblast blast+.output.outfmt6or7.file --outblast ACT.crunch.formated.file [query.sequence.chrom1.{gff|gbk|fasta}, [query.sequence.chrom2.{gff|gbk|fasta}], ...]"
+	s = sys.argv[0]+" --inblast blast+.output.outfmt6or7.file --outblast ACT.crunch.formated.file [--queryref=query.sequence.{gff|gbk|fasta}] [--subjectref=subject.sequence.{gff|gbk|fasta}]\n"
+	s += "  options '--queryref' and '--subjectref' allow to provide reference sequence\n"
+	s += "  in multi-fasta, multi-genbank flat file or GFF format."
+	s += "  This allows to correct the coordinates in case there are several records\n"
+	s += "  (molecules, contigs) in the query and/or subject genomes.\n"
+	s += "  Genome sequences (and their partition in multiple records need to be\n"
+	s += "  the same as in Blast input query/subject, but they can be annotatted\n"
+	s += "  differently, for instance with different ids.\n"
 	return s
 
-opts, args = getopt.getopt(sys.argv[1:], "h", ['inblast=','outblast=', 'help'])
+opts, args = getopt.getopt(sys.argv[1:], "h", ['inblast=','outblast=', 'queryref=', 'subjectref=', 'help'])
 dopt = dict(opts)
 if (('-h' in dopt) or ('--help' in dopt)):
 	print(usage())
@@ -22,11 +29,16 @@ if not (('--inblast' in dopt) and ('--outblast' in dopt)):
 nfinblasttab = dopt['--inblast']
 nfoutblasttab = dopt['--outblast']
 
-lnfseqrec = args
+dnfseqrec = {}
+if '--subjectref' in dopt:
+	dnfseqrec['s'] = dopt['--subjectref']
+if '--queryref' in dopt:
+	dnfseqrec['q'] = dopt['--queryref']
 
 dcontigconcatcoord = {}
+drefqsseqid = {}
 
-for nfseqrec in lnfseqrec:
+for refkey, nfseqrec in dnfseqrec.items():
 	nfext = os.path.basename(nfseqrec).rsplit('.', 1)[1]
 	if nfext=='gff':
 		seqrecs = GFF.parse(nfseqrec)
@@ -39,6 +51,7 @@ for nfseqrec in lnfseqrec:
 	cumseqlen = 0
 	for seqrec in seqrecs:
 		dcontigconcatcoord[seqrec.id] = cumseqlen
+		drefqsseqid.setdefault(refkey, []).append(seqrec.id) # ordered list of encountered sequence ids for query and subject as in reference sequence files
 		cumseqlen += len(seqrec)
 
 fout = open(nfoutblasttab, 'w')
@@ -50,10 +63,16 @@ with open(nfinblasttab, 'r') as fin:
 		lsp = line.rstrip('\n').split('\t')
 		dhit = dict(zip(blasttabfields, lsp))
 #		print(dhit)
+		dblaqsseqid = {'s':[], 'q':[]} # ordered list of encountered sequence ids for query and subject as in files used in blast search
 		for fcoord, fseqid in [('qstart', 'qseqid'), ('qend', 'qseqid'), ('sstart', 'sseqid'), ('send', 'sseqid')]:
 #			print(fcoord)
 #			print(fseqid)
-			dhit[fcoord] = str(int(dhit[fcoord]) + dcontigconcatcoord[dhit[fseqid]])
+			seqid = dhit[fseqid]
+			fk = fcoord[0]
+			if not seqid in dblaqsseqid[fk]:
+				dblaqsseqid[fk].append(seqid)
+			iseq = dblaqsseqid[fk].index(seqid)
+			dhit[fcoord] = str(int(dhit[fcoord]) + dcontigconcatcoord.get(seqid, drefqsseqid[fk][iseq]))
 		fout.write('\t'.join([dhit[f] for f in blasttabfields])+'\n')
 		
 fout.close()
