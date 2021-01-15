@@ -72,7 +72,13 @@ with open(nfinblasttab, 'r') as fin:
 			if not seqid in dblaqsseqid.get(fk, []):
 				dblaqsseqid[fk].append(seqid)
 			iseq = dblaqsseqid[fk].index(seqid)
-			dhit[fcoord] = str(int(dhit[fcoord])) + dcontigconcatcoord.get(seqid, drefqsseqid[fk][iseq])
+			hitcoord = int(dhit[fcoord])
+			if drefqsseqid:
+				if seqid in dcontigconcatcoord:
+					hitcoord += dcontigconcatcoord[seqid]
+				else:
+					hitcoord += dcontigconcatcoord[drefqsseqid[fk][iseq]]
+			dhit[fcoord] = str(hitcoord)
 		fout.write('\t'.join([dhit[f] for f in blasttabfields])+'\n')
 		
 fout.close()
