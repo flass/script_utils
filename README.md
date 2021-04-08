@@ -9,7 +9,7 @@ There is lots of stuff in here, please feel free to use! In particular, you can 
 - `LSFcluster_SangerInstitute/` includes susbmission scripts generally fit for job sumission on a **LSF computer cluster** system (using `bsub` command), with some specific reference to the environment of the Sanger Insitute farm
 - `PBScluster_ImperialCollege/` includes susbmission scripts generally fit for job sumission on a **PBS computer cluster** system (using `bsub` command), with some specific reference to the environment of the Imperial College cluster
 - `SGEcluster_UCL-CS/` includes susbmission scripts generally fit for job sumission on a **SGE computer cluster** system (using `qsub` command), with some specific reference to the environment of the UCL Computer Science Department cluster
-
+- `R/` gathers miscelaneous `R` scripts, including one to generate metadata dataset files for iTOL phylogenetic tree annotation, or a list of countries in each UN subregion.
 `*_array.[bq]sub` scripts are designed for the submission of *array* jobs on these respective systems, with the general syntax:
 ```
 xsub [submission command options] script_array.xsub tasklist [other arguments]
