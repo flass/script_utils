@@ -16,8 +16,8 @@ blastn -query GCF_000016245.1_ASM1624v1_genomic.O395.fna -subject GCF_900205735.
 # strain N16961 vs. 48853_G01 (O139)
 blastn -query GCF_900205735.1_N16961_v2_genomic.fna -subject 48853_G01.pacbio.fna -evalue 1e-05 -outfmt 7 > N16961_vs_48853_G01.blastout
 ## then reformat the output
-python prep_blastout4ACT.py --inblast O395_vs_N16961.blastout --outblast O395_vs_N16961.blastout.act GCF_000016245.1_ASM1624v1_genomic.O395.gbff GCF_900205735.1_N16961_v2_genomic.gbff
-python prep_blastout4ACT.py --inblast N16961_vs_48853_G01.blastout --outblast N16961_vs_48853_G01.blastout.act GCF_900205735.1_N16961_v2_genomic.fna 48853_G01.pacbio.fna
+python prep_blastout4ACT.py --inblast O395_vs_N16961.blastout --outblast O395_vs_N16961.blastout.act --queryref=GCF_000016245.1_ASM1624v1_genomic.O395.gbff --subjectref=GCF_900205735.1_N16961_v2_genomic.gbff
+python prep_blastout4ACT.py --inblast N16961_vs_48853_G01.blastout --outblast N16961_vs_48853_G01.blastout.act --queryref=GCF_900205735.1_N16961_v2_genomic.fna --subjectref=48853_G01.pacbio.fna
 ```
 
 Then here is the best way to load the data into ACT:
