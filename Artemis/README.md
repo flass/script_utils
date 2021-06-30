@@ -21,6 +21,10 @@ blastn -query GCF_900205735.1_N16961_v2_genomic.fna -subject 48853_G01.pacbio.fn
 python prep_blastout4ACT.py --inblast O395_vs_N16961.blastout --outblast O395_vs_N16961.blastout.act --queryref=GCF_000016245.1_ASM1624v1_genomic.O395.gbff --subjectref=GCF_900205735.1_N16961_v2_genomic.gbff
 python prep_blastout4ACT.py --inblast N16961_vs_48853_G01.blastout --outblast N16961_vs_48853_G01.blastout.act --queryref=GCF_900205735.1_N16961_v2_genomic.fna --subjectref=48853_G01.pacbio.fna
 ```
+If using GFF annotation file as input, please make sure that there is no `##FASTA` block at the end as it leads to a bug in the BioPython parsing (this being legacy Python 2.7, no support or fix is to be expected). if your GFF has a `##FASTA` sequence block at the end, a simple way to deal with it is to excise it:
+```sh
+head -n $(( $(grep -n '^##FASTA' input_genomic.gff | cut -d':' -f1) - 1)) input_genomic.gff > input_genomic_nofasta.gff
+```
 
 Then here is the best way to load the data into ACT:
 - open ACT
