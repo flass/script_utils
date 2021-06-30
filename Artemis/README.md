@@ -7,6 +7,8 @@ The script requires Python 3, BioPython, and you'll need Blast+ for the intitial
 conda create -n prep4ACT -c bioconda biopython blast
 # activate it
 conda activate prep4ACT
+# to provide support for GFF annotation file, please also run this (within the activated Conda envrionment)
+pip install bcbio-gff==0.6.5
 ```
 Here is an example how to use the script (here aiming at comparing a trio of _V. cholerae_ strains):
 ```sh

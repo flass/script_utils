@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from Bio import SeqIO
 import os, sys, getopt
+from BCBio import GFF
 
 blasttabfields = ['qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore']
 
