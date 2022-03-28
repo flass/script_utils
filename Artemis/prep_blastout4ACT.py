@@ -6,7 +6,7 @@ from BCBio import GFF
 blasttabfields = ['qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen', 'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore']
 
 def usage():
-	s = sys.argv[0]+" --inblast blast+.output.outfmt6or7.file --outblast ACT.crunch.formated.file [--queryref=query.sequence.{gff|gbk|fasta}] [--subjectref=subject.sequence.{gff|gbk|fasta}]\n"
+	s = sys.argv[0]+" --inblast blast+.output.outfmt6or7.file --outblast ACT.crunch.formated.file [--queryref=query.sequence.{gff|gbk|fasta}] [--subjectref=subject.sequence.{gff|gbk|fasta}] [--qcontigpref=str] [--scontigpref=str]\n"
 	s += "  options '--queryref' and '--subjectref' allow to provide reference sequence\n"
 	s += "  in multi-fasta, multi-genbank flat file or GFF format."
 	s += "  This allows to correct the coordinates in case there are several records\n"
@@ -14,9 +14,13 @@ def usage():
 	s += "  Genome sequences (and their partition in multiple records need to be\n"
 	s += "  the same as in Blast input query/subject, but they can be annotatted\n"
 	s += "  differently, for instance with different ids.\n"
+	s += "  Options '--qcontigpref' and '--scontigpref' allow to provide the character prefix of contig names.\n"
+	s += "  in the annotation files, so that contigs can be sorted by their numeric suffix value (rather than the.\n"
+	s += "  whole character string, which can lead to non numeric order). Default is to keep the order as provided\n"
+	s += "  in the anotation files.\n"
 	return s
 
-opts, args = getopt.getopt(sys.argv[1:], "h", ['inblast=','outblast=', 'queryref=', 'subjectref=', 'help'])
+opts, args = getopt.getopt(sys.argv[1:], "h", ['inblast=','outblast=', 'queryref=', 'subjectref=', 'qcontigpref=', 'scontigpref=', 'help'])
 dopt = dict(opts)
 if (('-h' in dopt) or ('--help' in dopt)):
 	print(usage())
@@ -31,10 +35,15 @@ nfinblasttab = dopt['--inblast']
 nfoutblasttab = dopt['--outblast']
 
 dnfseqrec = {}
+dcontigpref = {}
 if '--subjectref' in dopt:
 	dnfseqrec['s'] = dopt['--subjectref']
 if '--queryref' in dopt:
 	dnfseqrec['q'] = dopt['--queryref']
+if '--scontigpref' in dopt:
+	dcontigpref['s'] = dopt['--scontigpref']
+if '--qcontigpref' in dopt:
+	dcontigpref['q'] = dopt['--qcontigpref']
 
 dcontigconcatcoord = {}
 drefqsseqid = {}
@@ -49,10 +58,17 @@ for refkey, nfseqrec in dnfseqrec.items():
 		seqrecs = SeqIO.parse(nfseqrec, format='fasta')
 	else:
 		raise ValueError("unknown file format")
+	lseqrecs = [seqrec for seqrec in seqrecs]
+	seqrecids = [seqrec.id for seqrec in lseqrecs]
+	dseqrecs = dict([(seqrec.id, seqrec) for seqrec in lseqrecs])
+	if refkey in dcontigpref:
+		seqrecids.sort(key=lambda x: int(x.split(dcontigpref[refkey])[1]))
+		
 	cumseqlen = 0
-	for seqrec in seqrecs:
-		dcontigconcatcoord[seqrec.id] = cumseqlen
-		drefqsseqid.setdefault(refkey, []).append(seqrec.id) # ordered list of encountered sequence ids for query and subject as in reference sequence files
+	for seqrecid in seqrecids:
+		seqrec = dseqrecs[seqrecid]
+		dcontigconcatcoord[seqrecid] = cumseqlen
+		drefqsseqid.setdefault(refkey, []).append(seqrecid) # defaults to an ordered list of encountered sequence ids for query and subject as in reference sequence files, or sorted according to numeric suffix if --[sq]contigpref was specified
 		cumseqlen += len(seqrec)
 
 fout = open(nfoutblasttab, 'w')
