@@ -55,7 +55,7 @@ def getUIDsFromDatabaseLink(dblink, db, ignoreset=None, verbose=False, exclude_o
 			for dbid in dbids:
 				docsum = Entrez.read(Entrez.efetch(db=db, id=dbid, rettype='docsum'))
 				eltval = eva('docsum'+exclude_on_docsum_property[0])
-				if eltval == exclude_on_docsum_property[1]
+				if eltval == exclude_on_docsum_property[1]:
 					exclids.append(eltval)
 			dbids -= set(exclids)
 	if verbose: print("    Collected {} UIDs: {}".format(dbname, repr(dbids)))
@@ -107,7 +107,7 @@ def usage():
 	s += "                          '{}'.\n".format("', '".join(required_input_fields))
 	s += " outdir      file_path  output folder.\n"
 	s += " Options:\n"
-	s += "   --email   string     email address of user for registration on suing the NCBI Entrez API.\n"
+	s += "   --email   string     email address of user for registration on using the NCBI Entrez API.\n"
 	s += "   --ignore_bioproj     skip recording specified Bioproject records; defaults to excluding large umbrella projects:\n"
 	s += "                         \`{}\`.\n".format(repr(ignore_bioprojects_default))
 	s += "   --keep_xml          write the full XML records for the various database entries that were accessed in respective folders\n"
@@ -268,7 +268,7 @@ def main():
 				bpshortcits += sbpshortcits
 		# write result line to ouput table
 		fout.write('\t'.join([isolate, ncbiacc, ';'.join(biosamaccs), ';'.join(assmbaccs), ';'.join(bioproaccs), ';'.join(shortcits), ';'.join(pmids), ';'.join(dois), ';'.join(bsshortcits), ';'.join(bspmids), ';'.join(bsdois), ';'.join(bpshortcits), ';'.join(bppmids), ';'.join(bpdois)])+'\n')
-		fout.flush() # ensure regular writing of output, considering the expected slow proress of script as limited by web queries
+		fout.flush() # ensure regular writing of output, considering the expected slow progress of script as limited by web queries
 		
 		print(isolate+": done.")
 
