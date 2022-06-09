@@ -12,11 +12,15 @@ isolfield = 'Isolate_name'
 ncbiaccfield = 'NCBI_accession'
 required_input_fields = [isolfield, ncbiaccfield]
 
-ignore_bioprojects_default = {'514245', '224116', '608517'} # Umbrella NCBI projects to ignore
+ignore_bioprojects_default = {'514245', '224116', '608517', '248064'} # Umbrella NCBI projects to ignore
 # include of  and RefSeq collection
 #PRJNA514245	assembly of 150k prokaryotic SRA short read sets with SKESA
 #PRJNA224116	RefSeq genome assembly collection
 #PRJNA608517	Bactopia pipeline (spurious record association with 250k assemblies)
+#PRJNA248064	Whole genome sequencing data from Public Health England (Umbrella project)
+
+bioprojdocsum_pathto_projecttype = "['DocumentSummarySet']['DocumentSummary'][0]['Project_Type']"
+exclude_umbrealla = (bioprojdocsum_pathto_projecttype, 'Umbrella project')
 
 srapat = re.compile('[SDE]RR')
 asspat = re.compile('GC[AF]_')
@@ -54,7 +58,6 @@ def getUIDsFromDatabaseLink(dblink, db, ignoreset=None, verbose=False, exclude_o
 				if eltval == exclude_on_docsum_property[1]
 					exclids.append(eltval)
 			dbids -= set(exclids)
-		['DocumentSummarySet']['DocumentSummary'][0]['Project_Type']
 	if verbose: print("    Collected {} UIDs: {}".format(dbname, repr(dbids)))
 	return list(dbids)
 
@@ -231,6 +234,9 @@ def main():
 		# search for associated Bioproject records
 		bioprolink = getDatabaseLink(ncbiaccuid, oridb, 'bioproject', biosamid, verbose=verbose)
 		if bioprolink[0]['LinkSetDb']:
+#			bioproids = getUIDsFromDatabaseLink(bioprolink, 'bioproject', \
+#												exclude_on_docsum_property=exclude_umbrella, \
+#												ignoreset=ignore_bioprojects, verbose=verbose)
 			bioproids = getUIDsFromDatabaseLink(bioprolink, 'bioproject', ignoreset=ignore_bioprojects, verbose=verbose)
 			bioproaccs = getAccFromUIDs(bioproids, 'bioproject', 'Project_Acc', verbose=verbose)
 		else:
