@@ -66,7 +66,7 @@ fout = open(nfout, 'w')
 foutkeepacc = open(nfoutkeepacc, 'w')
 outfields = ['AssemblyAccession', 'Strain', 'ExclFromRefSeq']
 fout.write('\t'.join(outfields)+'\n')
-foutkeepacc.write('\t'.join(outfields[:-1])+'\n')
+#foutkeepacc.write('\t'.join(outfields[:-1])+'\n')
 
 for line in fxml:
 	if line!='\n':
@@ -85,7 +85,7 @@ for line in fxml:
 		exclfromRS = collectChildrenVals(alltopelt['ExclFromRefSeq'])
 		fout.write('\t'.join([assacc, strain, ';'.join(exclfromRS)])+'\n')
 		if not set(exclfromRS) & set(exclude_criteria):
-			foutkeepacc.write('\t'.join([assacc, strain])+'\n')
+			foutkeepacc.write(assacc+'\n')
 
 fout.close()
 foutkeepacc.close()
