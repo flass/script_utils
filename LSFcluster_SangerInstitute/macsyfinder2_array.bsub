@@ -3,6 +3,8 @@
 echo "This is job $LSB_JOBNAME, job_ID $LSB_JOBID (array_task_ID $LSB_JOBINDEX) on host $HOSTNAME, running on these workers: $LSB_MCPU_HOSTS"
 echo ""
 
+export PATHOGEN_ETC_DIR_OVERRIDE=~pathinstall/deploy/etc-upgrade_macsyfinder_to_2.1
+source ~pathinstall/deploy/etc-upgrade_macsyfinder_to_2.1/pathogen.profile
 module load macsyfinder/2.1
 #macsymodels=/data/pam/software/Macsyfinder_models/models
 macsymodels=/data/pam/software/macsyfinder_v2
@@ -14,6 +16,11 @@ modelfams="CasFinder CONJScan TFFscan TXSScan"
 [ -z "${outdir}" ] && outdir="${2}"
 [ -z "${systemsets}" ] && systemsets="${3}"
 [ -z "${systemsets}" ] && systemsets="${modelfams}"
+[ -z "${dbtype}" ] && dbtype="${4}"
+[ -z "${dbtype}" ] && dbtype="ordered_replicon"
+[ -z "${topo}" ] && topo="${5}"
+[ -z "${topo}" ] && topo="circular"
+
 echo "tasklist:"
 if [ -z "${tasklist}" ] ; then
   echo "ERROR: need to define variable tasklist (can be passed as argument \$1) ; exit now"
@@ -76,9 +83,19 @@ for sysset in ${systemsets} ; do
   else
     echo -e "\nRunning MacSyFinder on models for system family '${sysset}'.\n"
   fi
-  macsyfinder --models ${sysset} all --sequence-db ${protfasta} --db-type ordered_replicon --replicon-topology circular -o ${jobtmpdir}/${sysset} --models-dir ${macsymodels}
+  if [ -z "$(echo ${sysset} | grep '/')" ] ; then
+     msysset="${sysset} all"
+  else
+     mkdir -p $(dirname ${jobtmpdir}/${sysset})
+     msysset="$(echo ${sysset} | tr '/' ' ')"
+  fi
+  #macsyfinder --models ${sysset} all --sequence-db ${protfasta} --db-type ordered_replicon --replicon-topology circular -o ${jobtmpdir}/${sysset} --models-dir ${macsymodels}
+  macsyfinder --models ${msysset} --sequence-db ${protfasta} --db-type ${dbtype} --replicon-topology ${topo} -o ${jobtmpdir}/${sysset} --models-dir ${macsymodels}
   rm -f ${jobtmpdir}/${sysset}/*faa
+  rm -rf ${jobtmpdir}/${sysset}/hmmer_results/
+  [ "$USER" == 'fl4' ] && chown -R fl4:team216 ${jobtmpdir}/${sysset}
   rsync -avz ${jobtmpdir}/${sysset} ${outdir}/${nfrad1}/
+  [ "$USER" == 'fl4' ] && chown -R fl4:team216 ${outdir}/${nfrad1}
 done
 
 cd /tmp/
