@@ -1,0 +1,111 @@
+#! /usr/bin/env bash
+
+echo "This is job $LSB_JOBNAME, job_ID $LSB_JOBID (array_task_ID $LSB_JOBINDEX) on host $HOSTNAME, running on these workers: $LSB_MCPU_HOSTS"
+echo ""
+
+36131704 pathpipe PEND  normal     farm5-os0000001    -        PAM-info-pipeline - UNICYCLER (SRR18455803) - 8c6d37f0eddbfc60b47f81d26177bd3a Oct 11 22:17
+
+tasklist=$1
+outdir=$2
+nbthreads=$3
+
+# tasklist
+echo "tasklist:"
+if [ -z "$tasklist" ] ; then
+  echo "ERROR: need to define variable tasklist ; exit now"
+  exit 2
+else
+  ls $tasklist
+  if [ $? != 0 ] ; then
+    echo "ERROR: file '$tasklist' is missing ; exit now"
+    exit 2
+  fi
+fi
+
+# outdir
+echo "outrecdir:"
+if [ -z "$outdir" ] ; then
+  echo "ERROR: need to define variable outrecdir ; exit now"
+  exit 2
+else
+  ls $outdir -d
+  if [ $? != 0 ] ; then
+    echo "directory '$outdir' is missing ; create it now"
+    mkdir -p $outdir
+    if [ $? != 0 ] ; then
+      echo "could not create directory '$outdir' ; exit now"
+      exit 2
+    fi
+  fi
+fi
+
+if [ -z $nbthreads ] ; then
+  nbthreads=4
+fi
+
+
+shortreads=`awk "NR==${LSB_JOBINDEX}" ${tasklist}`
+echo "current task"
+echo $shortreads
+
+samplerad=$(basename $shortreads .fastq.gz)
+
+module load unicycler/0.5.0
+
+mkdir -p ${outdir}/${samplerad}/
+
+unicycler -1 $shortreads -o ${samplerad} --threads $nbthreads
+
+
+"unicycler_single_short_reads.sh" 57L, 1128C                                                                                                                                                                    57,0-1        Bot
+
+tasklist=$1
+outdir=$2
+nbthreads=$3
+
+# tasklist
+echo "tasklist:"
+if [ -z "$tasklist" ] ; then
+  echo "ERROR: need to define variable tasklist ; exit now"
+  exit 2
+else
+  ls $tasklist
+  if [ $? != 0 ] ; then
+    echo "ERROR: file '$tasklist' is missing ; exit now"
+    exit 2
+  fi
+fi
+
+# outdir
+echo "outrecdir:"
+if [ -z "$outdir" ] ; then
+  echo "ERROR: need to define variable outrecdir ; exit now"
+  exit 2
+else
+  ls $outdir -d
+  if [ $? != 0 ] ; then
+    echo "directory '$outdir' is missing ; create it now"
+    mkdir -p $outdir
+    if [ $? != 0 ] ; then
+      echo "could not create directory '$outdir' ; exit now"
+      exit 2
+    fi
+  fi
+fi
+
+if [ -z $nbthreads ] ; then
+  nbthreads=4
+fi
+
+
+shortreads=`awk "NR==${LSB_JOBINDEX}" ${tasklist}`
+echo "current task"
+echo $shortreads
+
+samplerad=$(basename $shortreads .fastq.gz)
+
+module load unicycler/0.5.0
+
+mkdir -p ${outdir}/${samplerad}/
+
+unicycler -s $shortreads -o ${outdir}/${samplerad} --threads $nbthreads
