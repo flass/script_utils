@@ -3,8 +3,6 @@
 echo "This is job $LSB_JOBNAME, job_ID $LSB_JOBID (array_task_ID $LSB_JOBINDEX) on host $HOSTNAME, running on these workers: $LSB_MCPU_HOSTS"
 echo ""
 
-36131704 pathpipe PEND  normal     farm5-os0000001    -        PAM-info-pipeline - UNICYCLER (SRR18455803) - 8c6d37f0eddbfc60b47f81d26177bd3a Oct 11 22:17
-
 tasklist=$1
 outdir=$2
 nbthreads=$3
